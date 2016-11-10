@@ -4,7 +4,8 @@
   "description": "a silly time waster",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "trump": "watchify -t lessify index.js -o bundle.js"
   },
   "keywords": [
     "backbone",
