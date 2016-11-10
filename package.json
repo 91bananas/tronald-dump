@@ -1,0 +1,26 @@
+{
+  "name": "trumpbox",
+  "version": "1.0.0",
+  "description": "a silly time waster",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "backbone",
+    "game"
+  ],
+  "author": "david cushman",
+  "license": "MIT",
+  "devDependencies": {
+    "browserify": "^13.1.1",
+    "jstify": "^0.14.0",
+    "less": "^2.7.1",
+    "lessify": "^1.0.1"
+  },
+  "dependencies": {
+    "backbone": "^1.3.3",
+    "jquery": "^3.1.1",
+    "underscore": "^1.8.3"
+  }
+}
