@@ -4,7 +4,7 @@ A silly waste of time
 ```
 $ npm install watchify browserify -g
 $ npm install
-$ watchify
+$ npm run trump
 ```
 
 from another terminal
