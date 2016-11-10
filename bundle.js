@@ -2,13 +2,168 @@
 var styles = require('./less/index.less'),
     Backbone = require('backbone'),
     _ = require('underscore'),
-    $ = require('jquery');
+    $ = require('jquery'),
+    preloadImages = require('./js/pre-load-images.js')(),
+    url = require('./js/base-url.js');
 
-var url = 'http://162.209.109.174/trumpFree_0{x}.png',
+var Timer = require('./js/timer.js');
+var allTrumps = require('./js/trump-collection.js');
+var gameModel = new Backbone.Model({
+        score: 0,
+        time: 20
+    }),
+    timer = new Timer({
+        model: gameModel
+    });
+
+$('body').append(timer.render().$el);
+
+var tick = function () {
+    var time = gameModel.get('time');
+    gameModel.set('time', time - 1);
+    if (gameModel.get('time') === 0) {
+        gameModel.set('running', false);
+    } else {
+        setTimeout(function () {
+            tick();
+        }, 1000);
+    }
+};
+var GameStartView = require('./js/game-start.js');
+var startView = new GameStartView({
+    model: gameModel
+});
+//stop context menu on right click
+document.addEventListener('contextmenu', function (e) {
+    e.preventDefault();
+}, false);
+
+
+//gloves movement
+var handleGlovesMovement = require('./js/gloves.js');
+handleGlovesMovement();
+
+},{"./js/base-url.js":2,"./js/game-start.js":3,"./js/gloves.js":4,"./js/pre-load-images.js":5,"./js/timer.js":6,"./js/trump-collection.js":7,"./less/index.less":8,"backbone":9,"jquery":10,"underscore":13}],2:[function(require,module,exports){
+module.exports = 'img/trumpFree_0';
+
+},{}],3:[function(require,module,exports){
+var Backbone = require('backbone');
+
+module.exports = Backbone.View.extend({
+    el: '.game-start',
+    template: require('../tpl/game-start.html'),
+    initialize: function (options) {
+        this.options = options || {};
+        this.render();
+        this.listenTo(this.model, 'change:running', function () {
+            if (this.model.get('running')) {
+                this.render();
+            }
+        });
+    },
+    render: function () {
+        this.$el.empty().append(
+            this.template()
+        );
+    },
+
+    events: {
+        'click .start': 'start'
+    },
+
+    start: function () {
+        this.model.set('running', true);
+        this.$el.addClass('hide');
+        Backbone.trigger('tick');
+    }
+});
+
+},{"../tpl/game-start.html":14,"backbone":9}],4:[function(require,module,exports){
+var $ = require('jquery'),
+    base = require('./base-url.js'),
+    _ = require('underscore'),
     trumps = [1, 2, 3, 4, 5, 6, 7],
-    mainTrump = 6, s = 1;;
+    Backbone = require('backbone');
+module.exports = function () {
+    var $left = $(".left.tip"),
+        $right = $(".right.tip"),
+        $flash = $('.flash');
 
-var Timer = Backbone.View.extend({
+    $(document).on("mousemove", function (evt) {
+        $left.css({
+            left: evt.pageX - 140,
+            top: evt.pageY
+        });
+        $right.css({
+            left: evt.pageX + 120,
+            top: evt.pageY - 40
+        });
+
+        if (evt.pageX > $(window).width() / 2.2) {
+            $('body').css('backgroundColor', 'tomato');
+        } else {
+            $('body').css('backgroundColor', 'dodgerblue');
+        }
+    });
+
+    //punch him
+    $('body').on('mousedown', '.trump', function (e) {
+        var $this = $(this);
+
+        if (e.which === 1) { // left
+            var transform = $left.css('transform');
+            $left.css('transform', transform + ' translate(25px, 35px)');
+            $this.addClass('hit left');
+            setTimeout(function () {
+                $left.css('transform', transform);
+            }, 80);
+        } else if (e.which === 3) { // right
+            var transform = $right.css('transform');
+            $right.css('transform', transform + ' translate(25px, 35px)');
+            $this.addClass('hit right');
+            setTimeout(function () {
+                $right.css('transform', transform);
+            }, 80);
+        }
+
+        $flash.addClass('ing');
+        setTimeout(function () {
+            $this.removeClass('hit left right');
+            $flash.removeClass('ing');
+        }, 70);
+
+        var v = Math.floor(Math.random() * (5 + 1) + 1);
+        if (v == 2) {
+            var newTrump = _.sample(trumps);
+            $this.attr('src', base + newTrump + '.png');
+            Backbone.trigger('newTrump', newTrump);
+        }
+
+        var asd = $('<div class="score">-2</div>');
+        asd.css({
+            left: e.pageX,
+            top: e.pageY,
+        }).appendTo('body').on('animationend', function () {
+            $(this).remove();
+        });
+
+    })
+};
+
+},{"./base-url.js":2,"backbone":9,"jquery":10,"underscore":13}],5:[function(require,module,exports){
+var base = require('./base-url.js');
+
+module.exports = function () {
+    for (var i = 1; i < 8; i++) {
+        var v = new Image();
+        v.src = base + i + '.png';
+    }
+};
+
+},{"./base-url.js":2}],6:[function(require,module,exports){
+var Backbone = require('backbone');
+
+module.exports = Backbone.View.extend({
     template: function () {
         return '<div class="timer">' + this.model.get('time') + '</div>';
     },
@@ -20,121 +175,43 @@ var Timer = Backbone.View.extend({
         return this;
     }
 });
-var Images = new Backbone.Collection([{
+
+},{"backbone":9}],7:[function(require,module,exports){
+var Backbone = require('backbone');
+
+module.exports = new Backbone.Collection([{
     url: '6',
-    power: 3
+    power: 3,
+    css: 'right: -10px;'
 }, {
     url: '3',
-    power: 2
+    power: 2,
+    css: 'right: 100px;'
 }, {
     url: '2',
-    power: 1
+    power: 1,
+    css: 'right: 70px;'
 }, {
     url: '4',
-    power: 4
+    power: 4,
+    css: 'right: 110px;'
 }, {
     url: '7',
-    power: 5
+    power: 5,
+    css: 'right: 20px;'
 }, {
     url: '1',
-    power: 5
+    power: 5,
+    css: 'right: -70px;'
+}, {
+    url: '5',
+    power: '3',
+    css: 'right: 40px;'
 }]);
-var gameModel = new Backbone.Model({
-        score: 0,
-        time: 20
-    }),
-    timer = new Timer({
-        model: gameModel
-    });
-$('body').append(timer.render().$el);
 
-var tick = function () {
-    var time = gameModel.get('time');
-    gameModel.set('time', time - 1);
-    if (gameModel.get('time') === 0) {} else {
-        setTimeout(function () {
-            tick();
-        }, 1000);
-
-    }
-};
-var startGame = function () {
-    gameModel.set('running', true);
-    $('.game-start').addClass('hide');
-    tick();
-};
-//stop context menu on right click
-document.addEventListener('contextmenu', function (e) {
-    e.preventDefault();
-}, false);
-
-var $left = $('.left'),
-    $right = $('.right'),
-    $flash = $('.flash');
-
-//punch him
-$('body').on('mousedown', '.trump', function (e) {
-    var $this = $(this);
-
-    if (e.which === 1) { // left
-        var transform = $left.css('transform');
-        $left.css('transform', transform + ' translate(10px, 10px)');
-        $this.addClass('hit left');
-        setTimeout(function () {
-            $left.css('transform', transform);
-        }, 80);
-    } else if (e.which === 3) { // right
-        var transform = $right.css('transform');
-        $right.css('transform', transform + ' translate(10px, 10px)');
-        $this.addClass('hit right');
-        setTimeout(function () {
-            $right.css('transform', transform);
-        }, 80);
-    }
-
-    $flash.addClass('ing');
-    setTimeout(function () {
-        $this.removeClass('hit left right');
-        $flash.removeClass('ing');
-    }, 70);
-
-    var v = Math.floor(Math.random() * (4 + 1) + 1);
-    if (v == 2) {
-        $this.attr('src', url.replace('{x}', _.sample(trumps)));
-    }
-    var asd = $('<div class="score">+50</div>');
-    asd.css({
-        left: e.pageX,
-        top: e.pageY,
-    }).appendTo('body').on('animationend', function () {
-        $(this).remove();
-    });
-
-}).on('click', '.start', startGame);
-
-//gloves movement
-var $left = $(".left.tip");
-var $right = $(".right.tip");
-$(document).on("mousemove", function (evt) {
-    $left.css({
-        left: evt.pageX - 100,
-        top: evt.pageY
-    });
-    $right.css({
-        left: evt.pageX + 100,
-        top: evt.pageY - 40
-    });
-
-    if (evt.pageX > $(window).width() / 2.2) {
-        $('body').css('backgroundColor', 'tomato');
-    } else {
-        $('body').css('backgroundColor', 'dodgerblue');
-    }
-});
-
-},{"./less/index.less":2,"backbone":3,"jquery":4,"underscore":7}],2:[function(require,module,exports){
+},{"backbone":9}],8:[function(require,module,exports){
 var css = "* {\n  font-family: 'Bangers';\n  box-sizing: border-box;\n  -webkit-touch-callout: none;\n  /* iOS Safari */\n  -webkit-user-select: none;\n  /* Chrome/Safari/Opera */\n  -khtml-user-select: none;\n  /* Konqueror */\n  -moz-user-select: none;\n  /* Firefox */\n  -ms-user-select: none;\n  /* Internet Explorer/Edge */\n  user-select: none;\n}\nbody {\n  background: dodgerblue;\n  height: 100vh;\n  width: 100vw;\n  display: flex;\n  justify-content: center;\n}\n.timer {\n  position: absolute;\n  top: 0;\n  right: 30px;\n  font-family: 'Bangers';\n  font-size: 6em;\n  color: #fff;\n}\n.building {\n  z-index: 10;\n}\n.podium {\n  margin-top: -4px;\n  width: 520px;\n  position: relative;\n}\n.podium .top {\n  width: 100%;\n  height: 10px;\n  background: #777;\n  border-bottom: 4px solid #565656;\n}\n.podium .bottom {\n  width: 450px;\n  margin: 0 auto;\n  position: relative;\n  border-top: 500px solid #686868;\n  border-left: 25px solid transparent;\n  border-right: 25px solid transparent;\n}\n.podium .seal {\n  width: 300px;\n  height: 300px;\n  background: navy;\n  border: 38px solid #b5b553;\n  z-index: 5;\n  position: absolute;\n  border-radius: 100%;\n  top: 12%;\n  left: 110px;\n  opacity: 0.4;\n}\n.hit {\n  transform-origin: 50% 100%;\n  -webkit-transform-style: preserve-3d;\n  transform-style: preserve-3d;\n  filter: brightness(0.7);\n}\n.hit.left {\n  transform: skewX(2deg) scaleZ(0.9);\n}\n.hit.right {\n  transform: skewX(-2deg) scaleZ(0.9);\n}\n.tip {\n  height: 128px;\n  width: 128px;\n  position: absolute;\n  background: url('http://162.209.109.174/glove.png');\n  transform-style: preserve-3d;\n  z-index: 10;\n}\n.tip.right {\n  transform: rotate3d(100, -140, -40, 140deg);\n}\n.tip.left {\n  transform: rotate3d(40, -10, 103, -60deg);\n}\n.trump:hover {\n  cursor: none !important;\n}\n.game-start {\n  height: 100vh;\n  width: 100vw;\n  position: absolute;\n  background: rgba(255, 255, 255, 0.3);\n  z-index: 1000;\n  display: flex;\n  justify-content: center;\n  align-items: center;\n}\n.game-start .start {\n  padding: 30px 40px 30px 30px;\n  font-size: 5em;\n  font-family: 'Bangers';\n  border-radius: 4px;\n  background: #ffffff;\n  color: dodgerblue;\n  border: 4px solid dodgerblue;\n  cursor: pointer;\n}\n.flash {\n  height: 100vh;\n  width: 100vw;\n  position: absolute;\n  background: #fff;\n  opacity: 0;\n  transition: opacity 0.05s ease-out;\n  z-index: 5;\n}\n.flash.ing {\n  opacity: 0.5;\n}\n.score {\n  animation: animationFrames linear 0.2s;\n  animation-iteration-count: 1;\n  transform-origin: 50% 50%;\n  position: absolute;\n  z-index: 100;\n  font-size: 4em;\n  font-family: helvetica;\n  font-weight: 900;\n  color: #fff;\n  text-shadow: 2px 2px 3px rgba(0, 0, 0, 0.3);\n  transform: rotate(10deg);\n  -webkit-animation: animationFrames linear 0.2s;\n  -webkit-animation-iteration-count: 1;\n  -webkit-transform-origin: 50% 50%;\n  -moz-animation: animationFrames linear 0.2s;\n  -moz-animation-iteration-count: 1;\n  -moz-transform-origin: 50% 50%;\n  -o-animation: animationFrames linear 0.2s;\n  -o-animation-iteration-count: 1;\n  -o-transform-origin: 50% 50%;\n  -ms-animation: animationFrames linear 0.2s;\n  -ms-animation-iteration-count: 1;\n  -ms-transform-origin: 50% 50%;\n}\n@keyframes animationFrames {\n  0% {\n    opacity: 1;\n    transform: translate(0px, 0px);\n  }\n  51% {\n    transform: translate(-30px, -33px);\n  }\n  100% {\n    opacity: 0;\n    transform: translate(-60px, 225px);\n  }\n}\n@-moz-keyframes animationFrames {\n  0% {\n    opacity: 1;\n    -moz-transform: translate(0px, 0px);\n  }\n  51% {\n    -moz-transform: translate(-30px, -33px);\n  }\n  100% {\n    opacity: 0;\n    -moz-transform: translate(-60px, 225px);\n  }\n}\n@-webkit-keyframes animationFrames {\n  0% {\n    opacity: 1;\n    -webkit-transform: translate(0px, 0px);\n  }\n  51% {\n    -webkit-transform: translate(-30px, -33px);\n  }\n  100% {\n    opacity: 0;\n    -webkit-transform: translate(-60px, 225px);\n  }\n}\n@-o-keyframes animationFrames {\n  0% {\n    opacity: 1;\n    -o-transform: translate(0px, 0px);\n  }\n  51% {\n    -o-transform: translate(-30px, -33px);\n  }\n  100% {\n    opacity: 0;\n    -o-transform: translate(-60px, 225px);\n  }\n}\n@-ms-keyframes animationFrames {\n  0% {\n    opacity: 1;\n    -ms-transform: translate(0px, 0px);\n  }\n  51% {\n    -ms-transform: translate(-30px, -33px);\n  }\n  100% {\n    opacity: 0;\n    -ms-transform: translate(-60px, 225px);\n  }\n}\n.hide {\n  display: none;\n}\n";(require('lessify'))(css); module.exports = css;
-},{"lessify":6}],3:[function(require,module,exports){
+},{"lessify":12}],9:[function(require,module,exports){
 (function (global){
 //     Backbone.js 1.3.3
 
@@ -2058,7 +2135,7 @@ var css = "* {\n  font-family: 'Bangers';\n  box-sizing: border-box;\n  -webkit-
 });
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"jquery":4,"underscore":7}],4:[function(require,module,exports){
+},{"jquery":10,"underscore":13}],10:[function(require,module,exports){
 /*!
  * jQuery JavaScript Library v3.1.1
  * https://jquery.com/
@@ -12280,7 +12357,7 @@ if ( !noGlobal ) {
 return jQuery;
 } );
 
-},{}],5:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 module.exports = function (css, customDocument) {
   var doc = customDocument || document;
   if (doc.createStyleSheet) {
@@ -12319,10 +12396,10 @@ module.exports.byUrl = function(url) {
   }
 };
 
-},{}],6:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 module.exports = require('cssify');
 
-},{"cssify":5}],7:[function(require,module,exports){
+},{"cssify":11}],13:[function(require,module,exports){
 //     Underscore.js 1.8.3
 //     http://underscorejs.org
 //     (c) 2009-2015 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
@@ -13871,5 +13948,14 @@ module.exports = require('cssify');
     });
   }
 }.call(this));
+
+},{}],14:[function(require,module,exports){
+module.exports = function(obj){
+var __t,__p='',__j=Array.prototype.join,print=function(){__p+=__j.call(arguments,'');};
+with(obj||{}){
+__p+='<button class=\'start\'>Start</button>\n';
+}
+return __p;
+};
 
 },{}]},{},[1]);
