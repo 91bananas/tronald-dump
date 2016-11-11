@@ -24,7 +24,7 @@ module.exports = Backbone.View.extend({
     start: function () {
         this.model.set('running', true);
         this.$el.addClass('hide');
-        Backbone.trigger('tick');
-        this.model.set('time', this.model.defaults.time);
+        Backbone.trigger('tickStart');
+        this.model.set(this.model.defaults);
     }
 });

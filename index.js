@@ -17,7 +17,9 @@ var gameModel = require('./js/game-model.js'),
     startView = new GameStartView({
         model: gameModel
     }),
-    trump = new TrumpView(),
+    trump = new TrumpView({
+        model: gameModel
+    }),
     score = new ScoreView({
         model: gameModel
     });
@@ -34,8 +36,9 @@ var tick = function () {
             tick();
         }, 1000);
     }
+    Backbone.trigger('clockTick');
 };
-Backbone.on('tick', tick);
+Backbone.on('tickStart', tick);
 //stop context menu on right click
 document.addEventListener('contextmenu', function (e) {
     e.preventDefault();

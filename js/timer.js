@@ -6,7 +6,11 @@ module.exports = Backbone.View.extend({
         return '<div class="timer ' + (this.model.get('running') ? 'running': '') + '">' + this.model.get('time') + '</div>';
     },
     initialize: function () {
-        this.listenTo(this.model, 'change', this.render);
+        this.listenTo(this.model, 'change', function (model) {
+            if (model.changed.running || model.changed.time) {
+                this.render();
+            }
+        });
     },
     render: function () {
         this.$el.empty().append(this.template());

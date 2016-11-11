@@ -20,6 +20,7 @@ body {
     width: 100vw;
     display: flex;
     justify-content: center;
+    align-items: center;
 }
 
 .timer {
@@ -36,6 +37,14 @@ body {
             animation: changeLetter 1s linear infinite alternate;
         }
     }
+}
+.score-container {
+    position: absolute;
+    top: 100px;
+    right: 30px;
+    font-family: 'Bangers';
+    font-size: 3em;
+    color: #fff;
 }
 @keyframes changeLetter {
     0% { content: '.0' }
@@ -139,6 +148,17 @@ body {
     justify-content: center;
     align-items: center;
 
+    .can-you {
+        position: absolute;
+        top: 100px;
+        padding: 30px;
+        background: tomato;
+        color: #fff;
+        transform: rotate(-10deg);
+        font-size: 3em;
+        font-family: 'Bangers';
+        box-shadow: -4px 4px  dodgerblue;
+    }
     .start {
         padding: 30px 40px 30px 30px;
         font-size: 5em;

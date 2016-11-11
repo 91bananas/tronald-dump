@@ -1,7 +1,8 @@
 var Backbone = require('backbone'),
     Model = Backbone.Model.extend({
         defaults: {
-            time: 20
+            time: 20,
+            score: 0
         }
     });
 
