@@ -6,16 +6,15 @@ module.exports = Backbone.View.extend({
     initialize: function (options) {
         this.options = options || {};
         this.render();
-        this.listenTo(this.model, 'change:running', function () {
-            if (this.model.get('running')) {
-                this.render();
-            }
-        });
+        this.listenTo(this.model, 'change:running', this.render);
     },
     render: function () {
         this.$el.empty().append(
             this.template()
         );
+        if (!this.model.get('running')) {
+            this.$el.removeClass('hide');
+        }
     },
 
     events: {
@@ -26,5 +25,6 @@ module.exports = Backbone.View.extend({
         this.model.set('running', true);
         this.$el.addClass('hide');
         Backbone.trigger('tick');
+        this.model.set('time', this.model.defaults.time);
     }
 });
