@@ -1,6 +1,7 @@
 var Backbone = require('backbone');
 
 module.exports = Backbone.View.extend({
+    el: '.timer-container',
     template: function () {
         return '<div class="timer ' + (this.model.get('running') ? 'running': '') + '">' + this.model.get('time') + '</div>';
     },

@@ -6,16 +6,19 @@ var styles = require('./less/index.less'),
     url = require('./js/base-url.js');
 
 var Timer = require('./js/timer.js'),
-    GameStartView = require('./js/game-start.js');
+    GameStartView = require('./js/game-start.js'),
+    TrumpView = require('./js/trump.js');
+
 var gameModel = require('./js/game-model.js'),
     timer = new Timer({
         model: gameModel
     }),
     startView = new GameStartView({
         model: gameModel
-    });
+    }),
+    trump = new TrumpView();
 
-$('body').append(timer.render().$el);
+Backbone.trigger('newTrump', 6);
 
 var tick = function () {
     var time = gameModel.get('time');
