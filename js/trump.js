@@ -17,7 +17,10 @@ module.exports = Backbone.View.extend({
         this.listenTo(Backbone, 'clockTick', function () {
             var score = this.model.get('score');
             var currentModel = this.collection.findWhere({url: '' + this.trump});
-            score += currentModel.get('power') * getRandomInt(1,10);
+            score += currentModel.get('power') * getRandomInt(4,10);
+            if (score > 269) {
+                this.model.set('lost', true);
+            }
             this.model.set('score', score);
         });
         //img/trumpFree_06.png

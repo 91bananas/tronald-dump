@@ -1,4 +1,5 @@
-var Backbone = require('backbone');
+var _ = require('underscore'),
+    Backbone = require('backbone');
 
 module.exports = Backbone.View.extend({
     el: '.timer-container',
@@ -7,7 +8,7 @@ module.exports = Backbone.View.extend({
     },
     initialize: function () {
         this.listenTo(this.model, 'change', function (model) {
-            if (model.changed.running || model.changed.time) {
+            if (_.has(model.changed, 'running') || _.has(model.changed, 'time')) {
                 this.render();
             }
         });

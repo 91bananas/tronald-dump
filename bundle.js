@@ -31,6 +31,7 @@ var tick = function () {
     var time = gameModel.get('time');
     gameModel.set('time', time - 1);
     if (gameModel.get('time') === 0) {
+        debugger;
         gameModel.set('running', false);
     } else {
         setTimeout(function () {
@@ -72,16 +73,24 @@ var Backbone = require('backbone');
 module.exports = Backbone.View.extend({
     el: '.game-start',
     template: require('../tpl/game-start.html'),
+    welcome: 'Can you stop the donald from getting 270!?',
+    lose: 'YOU LOSE! MY PRESIDENCY IS GONNA BE YUUUGGE!',
+    win: 'This game is obviously rigged',
+
     initialize: function (options) {
         this.options = options || {};
         this.render();
         this.listenTo(this.model, 'change:running', this.render);
+        this.listenTo(this.model, 'change:lost', this.render);
     },
     render: function () {
+        var _this = this;
         this.$el.empty().append(
-            this.template()
+            this.template({
+                message: this.model.get('lost') ? _this.lose : _this.welcome
+            })
         );
-        if (!this.model.get('running')) {
+        if (!this.model.get('running') || this.model.get('lost')) {
             this.$el.removeClass('hide');
         }
     },
@@ -159,14 +168,7 @@ module.exports = function () {
             Backbone.trigger('newTrump', newTrump);
         }
 
-        var asd = $('<div class="score">-2</div>');
-        asd.css({
-            left: e.pageX,
-            top: e.pageY,
-        }).appendTo('body').on('animationend', function () {
-            $(this).remove();
-        });
-        Backbone.trigger('punch');
+        Backbone.trigger('punch', e);
     });
 };
 
@@ -181,7 +183,8 @@ module.exports = function () {
 };
 
 },{"./base-url.js":2}],7:[function(require,module,exports){
-var Backbone = require('backbone');
+var _ = require('underscore'),
+    Backbone = require('backbone');
 
 module.exports = Backbone.View.extend({
     el: '.timer-container',
@@ -190,7 +193,7 @@ module.exports = Backbone.View.extend({
     },
     initialize: function () {
         this.listenTo(this.model, 'change', function (model) {
-            if (model.changed.running || model.changed.time) {
+            if (_.has(model.changed, 'running') || _.has(model.changed, 'time')) {
                 this.render();
             }
         });
@@ -201,7 +204,7 @@ module.exports = Backbone.View.extend({
     }
 });
 
-},{"backbone":12}],8:[function(require,module,exports){
+},{"backbone":12,"underscore":16}],8:[function(require,module,exports){
 var Backbone = require('backbone');
 
 module.exports = new Backbone.Collection([{
@@ -254,7 +257,10 @@ module.exports = Backbone.View.extend({
         this.listenTo(Backbone, 'clockTick', function () {
             var score = this.model.get('score');
             var currentModel = this.collection.findWhere({url: '' + this.trump});
-            score += currentModel.get('power') * getRandomInt(1,10);
+            score += currentModel.get('power') * getRandomInt(4,10);
+            if (score > 269) {
+                this.model.set('lost', true);
+            }
             this.model.set('score', score);
         });
         //img/trumpFree_06.png
@@ -272,7 +278,8 @@ module.exports = Backbone.View.extend({
 
 },{"../tpl/trump.html":18,"./base-url.js":2,"./trump-collection.js":8,"backbone":12}],10:[function(require,module,exports){
 var Backbone = require('backbone'),
-    allTrumps = require('./trump-collection.js');
+    allTrumps = require('./trump-collection.js'),
+    $ = require('jquery');
 
 module.exports = Backbone.View.extend({
     el: '.score-container',
@@ -294,16 +301,28 @@ module.exports = Backbone.View.extend({
             )
         );
     },
-    handlePunch: function () {
+    handlePunch: function (e) {
         var trump = allTrumps.findWhere({url: this.trump});
         var power = trump.get('power');
         var score = this.model.get('score');
-        score -= Math.floor(5 / power);
+        var modifier = Math.floor(5 / power);
+        var newScore = score - modifier || 1;
+        score = newScore > 0 ? newScore : 0;
         this.model.set('score', score);
+        this.displayModifier(modifier, e);
+    },
+    displayModifier: function (modifier, e) {
+        var asd = $('<div class="score">-' + modifier + '</div>');
+        asd.css({
+            left: e.pageX,
+            top: e.pageY,
+        }).appendTo('body').on('animationend', function () {
+            $(this).remove();
+        });
     }
-})
+});
 
-},{"../tpl/votes.html":19,"./trump-collection.js":8,"backbone":12}],11:[function(require,module,exports){
+},{"../tpl/votes.html":19,"./trump-collection.js":8,"backbone":12,"jquery":13}],11:[function(require,module,exports){
 var css = "* {\n  font-family: 'Bangers';\n  box-sizing: border-box;\n  -webkit-touch-callout: none;\n  /* iOS Safari */\n  -webkit-user-select: none;\n  /* Chrome/Safari/Opera */\n  -khtml-user-select: none;\n  /* Konqueror */\n  -moz-user-select: none;\n  /* Firefox */\n  -ms-user-select: none;\n  /* Internet Explorer/Edge */\n  user-select: none;\n}\nbody {\n  background: dodgerblue;\n  height: 100vh;\n  width: 100vw;\n  display: flex;\n  justify-content: center;\n  align-items: center;\n}\n.timer {\n  position: absolute;\n  top: 0;\n  right: 30px;\n  font-family: 'Bangers';\n  font-size: 6em;\n  color: #fff;\n}\n.timer.running:after {\n  content: '.9';\n  animation: changeLetter 1s linear infinite alternate;\n}\n.score-container {\n  position: absolute;\n  top: 100px;\n  right: 30px;\n  font-family: 'Bangers';\n  font-size: 3em;\n  color: #fff;\n}\n@keyframes changeLetter {\n  0% {\n    content: '.0';\n  }\n  10% {\n    content: '.9';\n  }\n  20% {\n    content: '.8';\n  }\n  30% {\n    content: '.7';\n  }\n  40% {\n    content: '.6';\n  }\n  50% {\n    content: '.5';\n  }\n  60% {\n    content: '.4';\n  }\n  70% {\n    content: '.3';\n  }\n  80% {\n    content: '.2';\n  }\n  90% {\n    content: '.1';\n  }\n  100% {\n    content: '.0';\n  }\n}\n.building {\n  z-index: 10;\n}\n.podium {\n  margin-top: -4px;\n  width: 520px;\n  position: relative;\n}\n.podium .top {\n  width: 100%;\n  height: 10px;\n  background: #777;\n  border-bottom: 4px solid #565656;\n}\n.podium .bottom {\n  width: 450px;\n  margin: 0 auto;\n  position: relative;\n  border-top: 500px solid #686868;\n  border-left: 25px solid transparent;\n  border-right: 25px solid transparent;\n}\n.podium .seal {\n  width: 300px;\n  height: 300px;\n  background: navy;\n  border: 38px solid #b5b553;\n  z-index: 5;\n  position: absolute;\n  border-radius: 100%;\n  top: 12%;\n  left: 110px;\n  opacity: 0.4;\n}\n.hit {\n  transform-origin: 50% 100%;\n  -webkit-transform-style: preserve-3d;\n  transform-style: preserve-3d;\n  filter: brightness(0.7);\n}\n.hit.left {\n  transform: skewX(2deg) scaleZ(0.9);\n}\n.hit.right {\n  transform: skewX(-2deg) scaleZ(0.9);\n}\n.tip {\n  height: 128px;\n  width: 128px;\n  position: absolute;\n  background: url('http://162.209.109.174/glove.png');\n  transform-style: preserve-3d;\n  z-index: 10;\n}\n.tip.right {\n  transform: rotate3d(100, -140, -40, 140deg);\n}\n.tip.left {\n  transform: rotate3d(40, -10, 103, -60deg);\n}\n.trump {\n  position: relative;\n}\n.trump:hover {\n  cursor: none !important;\n}\n.game-start {\n  height: 100vh;\n  width: 100vw;\n  position: absolute;\n  background: rgba(255, 255, 255, 0.3);\n  z-index: 1000;\n  display: flex;\n  justify-content: center;\n  align-items: center;\n}\n.game-start .can-you {\n  position: absolute;\n  top: 100px;\n  padding: 30px;\n  background: tomato;\n  color: #fff;\n  transform: rotate(-10deg);\n  font-size: 3em;\n  font-family: 'Bangers';\n  box-shadow: -4px 4px dodgerblue;\n}\n.game-start .start {\n  padding: 30px 40px 30px 30px;\n  font-size: 5em;\n  font-family: 'Bangers';\n  border-radius: 4px;\n  background: #ffffff;\n  color: dodgerblue;\n  border: 4px solid dodgerblue;\n  cursor: pointer;\n}\n.flash {\n  height: 100vh;\n  width: 100vw;\n  position: absolute;\n  background: #fff;\n  opacity: 0;\n  transition: opacity 0.05s ease-out;\n  z-index: 5;\n}\n.flash.ing {\n  opacity: 0.5;\n}\n.score {\n  animation: animationFrames linear 0.2s;\n  animation-iteration-count: 1;\n  transform-origin: 50% 50%;\n  position: absolute;\n  z-index: 100;\n  font-size: 4em;\n  font-family: helvetica;\n  font-weight: 900;\n  color: #fff;\n  text-shadow: 2px 2px 3px rgba(0, 0, 0, 0.3);\n  transform: rotate(10deg);\n  -webkit-animation: animationFrames linear 0.2s;\n  -webkit-animation-iteration-count: 1;\n  -webkit-transform-origin: 50% 50%;\n  -moz-animation: animationFrames linear 0.2s;\n  -moz-animation-iteration-count: 1;\n  -moz-transform-origin: 50% 50%;\n  -o-animation: animationFrames linear 0.2s;\n  -o-animation-iteration-count: 1;\n  -o-transform-origin: 50% 50%;\n  -ms-animation: animationFrames linear 0.2s;\n  -ms-animation-iteration-count: 1;\n  -ms-transform-origin: 50% 50%;\n}\n@keyframes animationFrames {\n  0% {\n    opacity: 1;\n    transform: translate(0px, 0px);\n  }\n  51% {\n    transform: translate(-30px, -33px);\n  }\n  100% {\n    opacity: 0;\n    transform: translate(-60px, 225px);\n  }\n}\n@-moz-keyframes animationFrames {\n  0% {\n    opacity: 1;\n    -moz-transform: translate(0px, 0px);\n  }\n  51% {\n    -moz-transform: translate(-30px, -33px);\n  }\n  100% {\n    opacity: 0;\n    -moz-transform: translate(-60px, 225px);\n  }\n}\n@-webkit-keyframes animationFrames {\n  0% {\n    opacity: 1;\n    -webkit-transform: translate(0px, 0px);\n  }\n  51% {\n    -webkit-transform: translate(-30px, -33px);\n  }\n  100% {\n    opacity: 0;\n    -webkit-transform: translate(-60px, 225px);\n  }\n}\n@-o-keyframes animationFrames {\n  0% {\n    opacity: 1;\n    -o-transform: translate(0px, 0px);\n  }\n  51% {\n    -o-transform: translate(-30px, -33px);\n  }\n  100% {\n    opacity: 0;\n    -o-transform: translate(-60px, 225px);\n  }\n}\n@-ms-keyframes animationFrames {\n  0% {\n    opacity: 1;\n    -ms-transform: translate(0px, 0px);\n  }\n  51% {\n    -ms-transform: translate(-30px, -33px);\n  }\n  100% {\n    opacity: 0;\n    -ms-transform: translate(-60px, 225px);\n  }\n}\n.hide {\n  display: none;\n}\n";(require('lessify'))(css); module.exports = css;
 },{"lessify":15}],12:[function(require,module,exports){
 (function (global){
@@ -14047,7 +14066,9 @@ module.exports = require('cssify');
 module.exports = function(obj){
 var __t,__p='',__j=Array.prototype.join,print=function(){__p+=__j.call(arguments,'');};
 with(obj||{}){
-__p+='<h1 class="can-you">Can you stop the donald from getting 270!?</h1>\n<button class=\'start\'>Start</button>\n';
+__p+='<h1 class="can-you">'+
+((__t=( message ))==null?'':__t)+
+'</h1>\n<button class=\'start\'>Start</button>\n';
 }
 return __p;
 };

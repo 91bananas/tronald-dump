@@ -58,13 +58,6 @@ module.exports = function () {
             Backbone.trigger('newTrump', newTrump);
         }
 
-        var asd = $('<div class="score">-2</div>');
-        asd.css({
-            left: e.pageX,
-            top: e.pageY,
-        }).appendTo('body').on('animationend', function () {
-            $(this).remove();
-        });
-        Backbone.trigger('punch');
+        Backbone.trigger('punch', e);
     });
 };

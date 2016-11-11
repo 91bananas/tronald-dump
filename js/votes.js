@@ -1,5 +1,6 @@
 var Backbone = require('backbone'),
-    allTrumps = require('./trump-collection.js');
+    allTrumps = require('./trump-collection.js'),
+    $ = require('jquery');
 
 module.exports = Backbone.View.extend({
     el: '.score-container',
@@ -21,11 +22,23 @@ module.exports = Backbone.View.extend({
             )
         );
     },
-    handlePunch: function () {
+    handlePunch: function (e) {
         var trump = allTrumps.findWhere({url: this.trump});
         var power = trump.get('power');
         var score = this.model.get('score');
-        score -= Math.floor(5 / power);
+        var modifier = Math.floor(5 / power);
+        var newScore = score - modifier || 1;
+        score = newScore > 0 ? newScore : 0;
         this.model.set('score', score);
+        this.displayModifier(modifier, e);
+    },
+    displayModifier: function (modifier, e) {
+        var asd = $('<div class="score">-' + modifier + '</div>');
+        asd.css({
+            left: e.pageX,
+            top: e.pageY,
+        }).appendTo('body').on('animationend', function () {
+            $(this).remove();
+        });
     }
-})
+});

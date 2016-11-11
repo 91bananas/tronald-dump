@@ -30,6 +30,7 @@ var tick = function () {
     var time = gameModel.get('time');
     gameModel.set('time', time - 1);
     if (gameModel.get('time') === 0) {
+        debugger;
         gameModel.set('running', false);
     } else {
         setTimeout(function () {
