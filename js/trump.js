@@ -8,8 +8,9 @@ module.exports = Backbone.View.extend({
     initialize: function (options) {
         this.options = options || {};
         this.collection = allTrumps;
-        this.listenTo(Backbone, 'newTrump', function () {
-            this.render(this.collection.findWhere({url: '' + arguments[0]}));
+        this.listenTo(Backbone, 'newTrump', function (trump) {
+            this.trump = trump;
+            this.render(this.collection.findWhere({url: '' + trump}));
         });
         //img/trumpFree_06.png
     },

@@ -65,6 +65,6 @@ module.exports = function () {
         }).appendTo('body').on('animationend', function () {
             $(this).remove();
         });
-
-    })
+        Backbone.trigger('punch');
+    });
 };
