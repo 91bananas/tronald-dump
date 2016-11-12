@@ -30,9 +30,8 @@ module.exports = Backbone.View.extend({
     },
 
     start: function () {
-        this.model.set('running', true);
+        this.model.set(this.model.defaults);
         this.$el.addClass('hide');
         Backbone.trigger('tickStart');
-        this.model.set(this.model.defaults);
     }
 });

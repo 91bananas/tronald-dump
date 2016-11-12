@@ -27,20 +27,35 @@ var gameModel = require('./js/game-model.js'),
 
 Backbone.trigger('newTrump', 6);
 
-var tick = function () {
-    var time = gameModel.get('time');
-    gameModel.set('time', time - 1);
-    if (gameModel.get('time') === 0) {
-        debugger;
-        gameModel.set('running', false);
-    } else {
-        setTimeout(function () {
-            tick();
-        }, 1000);
-    }
-    Backbone.trigger('clockTick');
-};
-Backbone.on('tickStart', tick);
+// var iv;
+// var tick = function () {
+//     var time = gameModel.get('time');
+//     gameModel.set('time', time - 1);
+//     if (gameModel.get('time') === 0) {
+//         Backbone.trigger('timeUp');
+//     } else {
+//         setTimeout(function () {
+//             tick();
+//         }, 1000);
+//     }
+//     Backbone.trigger('clockTick');
+// };
+// tick = function () {
+//     var sysTime = new Date()/1000;
+//     var time = gameModel.get('time');
+//
+//     var intv = setInterval(function () {
+//         var tickTime = new Date()/1000;
+//         var elapsedSeconds = tickTime - sysTime;
+//         var newTime = Math.round( (time - elapsedSeconds) * 10 ) / 10;
+//         gameModel.set('time', newTime);
+//         if (newTime <= 0) {
+//             Backbone.trigger('timeUp');
+//             clearInterval(intv);
+//         }
+//     }, 100)
+// }
+
 //stop context menu on right click
 document.addEventListener('contextmenu', function (e) {
     e.preventDefault();
@@ -58,14 +73,12 @@ var Backbone = require('backbone'),
     Model = Backbone.Model.extend({
         defaults: {
             time: 20,
-            score: 0
+            score: 0,
+            lost: false
         }
     });
 
-module.exports = new Model({
-    score: 0,
-    time: 20
-});
+module.exports = new Model(Model.defaults);
 
 },{"backbone":12}],4:[function(require,module,exports){
 var Backbone = require('backbone');
@@ -100,10 +113,9 @@ module.exports = Backbone.View.extend({
     },
 
     start: function () {
-        this.model.set('running', true);
+        this.model.set(this.model.defaults);
         this.$el.addClass('hide');
         Backbone.trigger('tickStart');
-        this.model.set(this.model.defaults);
     }
 });
 
@@ -193,14 +205,45 @@ module.exports = Backbone.View.extend({
     },
     initialize: function () {
         this.listenTo(this.model, 'change', function (model) {
+            if (_.has(model.changed, 'lost')) {
+                this.model.set({
+                    running: false,
+                    time: 0
+                });
+            }
             if (_.has(model.changed, 'running') || _.has(model.changed, 'time')) {
                 this.render();
             }
         });
+        this.listenTo(Backbone, 'tickStart', this.go);
     },
     render: function () {
         this.$el.empty().append(this.template());
         return this;
+    },
+    go: function () {
+        var _this = this;
+        var startTime = Math.floor(Date.now() / 1000); //unix timestamp in seconds
+        var gameLength = _this.model.get('time'); //in seconds
+        var tick = function () {
+           var currentTime = Math.floor(Date.now() / 1000);
+           var elapsedSeconds = currentTime - startTime;
+           var computed = Math.round( (gameLength - elapsedSeconds) * 10 ) / 10;
+           _this.model.set('time', computed);
+
+           if (computed <= 0) {
+              Backbone.trigger('timeUp');
+              _this.model.set('running', false);
+              return;
+           }
+
+           Backbone.trigger('clockTick');
+           setTimeout(function() {
+               tick();
+           }, 100);
+        };
+
+        tick();
     }
 });
 
@@ -257,7 +300,7 @@ module.exports = Backbone.View.extend({
         this.listenTo(Backbone, 'clockTick', function () {
             var score = this.model.get('score');
             var currentModel = this.collection.findWhere({url: '' + this.trump});
-            score += currentModel.get('power') * getRandomInt(4,10);
+            score += currentModel.get('power') * getRandomInt(0,2);
             if (score > 269) {
                 this.model.set('lost', true);
             }
