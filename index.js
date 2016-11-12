@@ -8,7 +8,8 @@ var styles = require('./less/index.less'),
 var Timer = require('./js/timer.js'),
     GameStartView = require('./js/game-start.js'),
     TrumpView = require('./js/trump.js'),
-    ScoreView = require('./js/votes.js');
+    ScoreView = require('./js/votes.js'),
+    ShoutView = require('./js/shout.js');
 
 var gameModel = require('./js/game-model.js'),
     timer = new Timer({
@@ -21,6 +22,9 @@ var gameModel = require('./js/game-model.js'),
         model: gameModel
     }),
     score = new ScoreView({
+        model: gameModel
+    }),
+    shout = new ShoutView({
         model: gameModel
     });
 

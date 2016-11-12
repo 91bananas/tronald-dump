@@ -289,3 +289,43 @@ body {
 .hide {
     display: none;
 }
+.shout-container {
+    position: absolute;
+    &.left-top {
+        top: 100px;
+        left: 150px;
+        transform: rotate(15deg);
+    }
+    &.left-bottom {
+        bottom: 150px;
+        left: 150px;
+        transform: rotate(-25deg);
+    }
+    z-index: 111;
+    h1 {
+        display: inline-block;
+        background: #fff;
+        border-radius: ~"100px / 50px";
+        padding: 30px;
+        font-family: 'Bangers';
+        font-size: 2em;
+        z-index: 10;
+        position:relative;
+    }
+    .triangle {
+        display: inline-block;
+        width: 0;
+        height: 0;
+        border-style: solid;
+        border-width: 0 100px 80px 0;
+        border-color: transparent #fff transparent transparent;
+        position: absolute;
+        right: 0;
+        top: 54px;
+        z-index: 5;
+        transform: rotate(-25deg);
+    }
+    &:empty {
+        display: none;
+    }
+}

@@ -19,6 +19,7 @@ module.exports = Backbone.View.extend({
             }
         });
         this.listenTo(Backbone, 'tickStart', this.go);
+        this.render();
     },
     render: function () {
         this.$el.empty().append(this.template());
@@ -28,6 +29,8 @@ module.exports = Backbone.View.extend({
         var _this = this;
         var startTime = Math.floor(Date.now() / 1000); //unix timestamp in seconds
         var gameLength = _this.model.get('time'); //in seconds
+
+        this.model.set('running', true);
         var tick = function () {
            var currentTime = Math.floor(Date.now() / 1000);
            var elapsedSeconds = currentTime - startTime;

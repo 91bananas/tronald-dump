@@ -9,7 +9,8 @@ var styles = require('./less/index.less'),
 var Timer = require('./js/timer.js'),
     GameStartView = require('./js/game-start.js'),
     TrumpView = require('./js/trump.js'),
-    ScoreView = require('./js/votes.js');
+    ScoreView = require('./js/votes.js'),
+    ShoutView = require('./js/shout.js');
 
 var gameModel = require('./js/game-model.js'),
     timer = new Timer({
@@ -22,6 +23,9 @@ var gameModel = require('./js/game-model.js'),
         model: gameModel
     }),
     score = new ScoreView({
+        model: gameModel
+    }),
+    shout = new ShoutView({
         model: gameModel
     });
 
@@ -65,7 +69,7 @@ document.addEventListener('contextmenu', function (e) {
 var handleGlovesMovement = require('./js/gloves.js');
 handleGlovesMovement();
 
-},{"./js/base-url.js":2,"./js/game-model.js":3,"./js/game-start.js":4,"./js/gloves.js":5,"./js/pre-load-images.js":6,"./js/timer.js":7,"./js/trump.js":9,"./js/votes.js":10,"./less/index.less":11,"backbone":12,"jquery":13,"underscore":16}],2:[function(require,module,exports){
+},{"./js/base-url.js":2,"./js/game-model.js":3,"./js/game-start.js":4,"./js/gloves.js":5,"./js/pre-load-images.js":6,"./js/shout.js":7,"./js/timer.js":8,"./js/trump.js":10,"./js/votes.js":11,"./less/index.less":12,"backbone":13,"jquery":15,"underscore":17}],2:[function(require,module,exports){
 module.exports = 'img/trumpFree_0';
 
 },{}],3:[function(require,module,exports){
@@ -80,7 +84,7 @@ var Backbone = require('backbone'),
 
 module.exports = new Model(Model.defaults);
 
-},{"backbone":12}],4:[function(require,module,exports){
+},{"backbone":13}],4:[function(require,module,exports){
 var Backbone = require('backbone');
 
 module.exports = Backbone.View.extend({
@@ -119,7 +123,7 @@ module.exports = Backbone.View.extend({
     }
 });
 
-},{"../tpl/game-start.html":17,"backbone":12}],5:[function(require,module,exports){
+},{"../tpl/game-start.html":18,"backbone":13}],5:[function(require,module,exports){
 var $ = require('jquery'),
     base = require('./base-url.js'),
     _ = require('underscore'),
@@ -184,7 +188,7 @@ module.exports = function () {
     });
 };
 
-},{"./base-url.js":2,"backbone":12,"jquery":13,"underscore":16}],6:[function(require,module,exports){
+},{"./base-url.js":2,"backbone":13,"jquery":15,"underscore":17}],6:[function(require,module,exports){
 var base = require('./base-url.js');
 
 module.exports = function () {
@@ -195,6 +199,45 @@ module.exports = function () {
 };
 
 },{"./base-url.js":2}],7:[function(require,module,exports){
+var _ = require('underscore'),
+    Backbone = require('backbone'),
+    allTrumps = require('./trump-collection.js'),
+    getRandomInt = function (min, max) {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+    };
+
+
+module.exports = Backbone.View.extend({
+    el: '.shout-container',
+    template: require('../tpl/shout.html'),
+    initialize: function () {
+        this.listenTo(Backbone, 'newTrump', function (trump) {
+            this.trump = trump;
+        });
+        this.listenTo(Backbone, 'clockTick', this.render);
+    },
+
+    render: function () {
+        var _this = this,
+            trump = allTrumps.findWhere({url: '' + _this.trump});
+
+        if (getRandomInt(1,15) === 1) {
+            this.$el.empty().append(
+                this.template({
+                    message: _.sample(allTrumps.phrases[trump.get('phrase')])
+                })
+            );
+            this.$el.removeClass('left-bottom left-top').addClass(
+                (getRandomInt(1,3) === 1) ? 'left-top': 'left-bottom'
+            );
+            // setTimeout(function () {
+            //     _this.$el.empty();
+            // }, 600);
+        }
+    }
+});
+
+},{"../tpl/shout.html":19,"./trump-collection.js":9,"backbone":13,"underscore":17}],8:[function(require,module,exports){
 var _ = require('underscore'),
     Backbone = require('backbone');
 
@@ -216,6 +259,7 @@ module.exports = Backbone.View.extend({
             }
         });
         this.listenTo(Backbone, 'tickStart', this.go);
+        this.render();
     },
     render: function () {
         this.$el.empty().append(this.template());
@@ -225,6 +269,8 @@ module.exports = Backbone.View.extend({
         var _this = this;
         var startTime = Math.floor(Date.now() / 1000); //unix timestamp in seconds
         var gameLength = _this.model.get('time'); //in seconds
+
+        this.model.set('running', true);
         var tick = function () {
            var currentTime = Math.floor(Date.now() / 1000);
            var elapsedSeconds = currentTime - startTime;
@@ -247,40 +293,67 @@ module.exports = Backbone.View.extend({
     }
 });
 
-},{"backbone":12,"underscore":16}],8:[function(require,module,exports){
-var Backbone = require('backbone');
+},{"backbone":13,"underscore":17}],9:[function(require,module,exports){
+var Backbone = require('backbone'),
+    phrases = {
+        aggressive: [
+            'nasty woman',
+            'GRAB THEM BY THE PUSSY',
+            'rapists',
+            'BOMB THE HELL OUT OF ISIS',
+            'Build the Wall!',
+            'email server!'
+        ],
+        submissive: [
+            'this is rigged!',
+            'wrong! WRONG!',
+            'liberal media!',
+            'Bad Hombre',
+            'YUGEEEEEEE'
+        ]
+    },
+    Collection = Backbone.Collection.extend({
+        phrases: phrases
+    });
 
-module.exports = new Backbone.Collection([{
+module.exports = new Collection([{
     url: '6',
     power: 3,
-    css: 'right: -10px;'
+    css: 'right: -10px;',
+    phrase: 'submissive'
 }, {
     url: '3',
     power: 2,
-    css: 'right: 100px;'
+    css: 'right: 100px;',
+    phrase: 'submissive'
 }, {
     url: '2',
     power: 1,
-    css: 'right: 70px;'
+    css: 'right: 70px;',
+    phrase: 'submissive'
 }, {
     url: '4',
     power: 4,
-    css: 'right: 110px;'
+    css: 'right: 110px;',
+    phrase: 'aggressive'
 }, {
     url: '7',
     power: 5,
-    css: 'right: 20px;'
+    css: 'right: 20px;',
+    phrase: 'aggressive'
 }, {
     url: '1',
     power: 5,
-    css: 'right: -70px;'
+    css: 'right: -70px;',
+    phrase: 'aggressive'
 }, {
     url: '5',
     power: '3',
-    css: 'right: 40px;'
+    css: 'right: 40px;',
+    phrase: 'aggressive'
 }]);
 
-},{"backbone":12}],9:[function(require,module,exports){
+},{"backbone":13}],10:[function(require,module,exports){
 var Backbone = require('backbone'),
     allTrumps = require('./trump-collection.js'),
     base = require('./base-url.js'),
@@ -319,7 +392,7 @@ module.exports = Backbone.View.extend({
     }
 });
 
-},{"../tpl/trump.html":18,"./base-url.js":2,"./trump-collection.js":8,"backbone":12}],10:[function(require,module,exports){
+},{"../tpl/trump.html":20,"./base-url.js":2,"./trump-collection.js":9,"backbone":13}],11:[function(require,module,exports){
 var Backbone = require('backbone'),
     allTrumps = require('./trump-collection.js'),
     $ = require('jquery');
@@ -365,9 +438,9 @@ module.exports = Backbone.View.extend({
     }
 });
 
-},{"../tpl/votes.html":19,"./trump-collection.js":8,"backbone":12,"jquery":13}],11:[function(require,module,exports){
-var css = "* {\n  font-family: 'Bangers';\n  box-sizing: border-box;\n  -webkit-touch-callout: none;\n  /* iOS Safari */\n  -webkit-user-select: none;\n  /* Chrome/Safari/Opera */\n  -khtml-user-select: none;\n  /* Konqueror */\n  -moz-user-select: none;\n  /* Firefox */\n  -ms-user-select: none;\n  /* Internet Explorer/Edge */\n  user-select: none;\n}\nbody {\n  background: dodgerblue;\n  height: 100vh;\n  width: 100vw;\n  display: flex;\n  justify-content: center;\n  align-items: center;\n}\n.timer {\n  position: absolute;\n  top: 0;\n  right: 30px;\n  font-family: 'Bangers';\n  font-size: 6em;\n  color: #fff;\n}\n.timer.running:after {\n  content: '.9';\n  animation: changeLetter 1s linear infinite alternate;\n}\n.score-container {\n  position: absolute;\n  top: 100px;\n  right: 30px;\n  font-family: 'Bangers';\n  font-size: 3em;\n  color: #fff;\n}\n@keyframes changeLetter {\n  0% {\n    content: '.0';\n  }\n  10% {\n    content: '.9';\n  }\n  20% {\n    content: '.8';\n  }\n  30% {\n    content: '.7';\n  }\n  40% {\n    content: '.6';\n  }\n  50% {\n    content: '.5';\n  }\n  60% {\n    content: '.4';\n  }\n  70% {\n    content: '.3';\n  }\n  80% {\n    content: '.2';\n  }\n  90% {\n    content: '.1';\n  }\n  100% {\n    content: '.0';\n  }\n}\n.building {\n  z-index: 10;\n}\n.podium {\n  margin-top: -4px;\n  width: 520px;\n  position: relative;\n}\n.podium .top {\n  width: 100%;\n  height: 10px;\n  background: #777;\n  border-bottom: 4px solid #565656;\n}\n.podium .bottom {\n  width: 450px;\n  margin: 0 auto;\n  position: relative;\n  border-top: 500px solid #686868;\n  border-left: 25px solid transparent;\n  border-right: 25px solid transparent;\n}\n.podium .seal {\n  width: 300px;\n  height: 300px;\n  background: navy;\n  border: 38px solid #b5b553;\n  z-index: 5;\n  position: absolute;\n  border-radius: 100%;\n  top: 12%;\n  left: 110px;\n  opacity: 0.4;\n}\n.hit {\n  transform-origin: 50% 100%;\n  -webkit-transform-style: preserve-3d;\n  transform-style: preserve-3d;\n  filter: brightness(0.7);\n}\n.hit.left {\n  transform: skewX(2deg) scaleZ(0.9);\n}\n.hit.right {\n  transform: skewX(-2deg) scaleZ(0.9);\n}\n.tip {\n  height: 128px;\n  width: 128px;\n  position: absolute;\n  background: url('http://162.209.109.174/glove.png');\n  transform-style: preserve-3d;\n  z-index: 10;\n}\n.tip.right {\n  transform: rotate3d(100, -140, -40, 140deg);\n}\n.tip.left {\n  transform: rotate3d(40, -10, 103, -60deg);\n}\n.trump {\n  position: relative;\n}\n.trump:hover {\n  cursor: none !important;\n}\n.game-start {\n  height: 100vh;\n  width: 100vw;\n  position: absolute;\n  background: rgba(255, 255, 255, 0.3);\n  z-index: 1000;\n  display: flex;\n  justify-content: center;\n  align-items: center;\n}\n.game-start .can-you {\n  position: absolute;\n  top: 100px;\n  padding: 30px;\n  background: tomato;\n  color: #fff;\n  transform: rotate(-10deg);\n  font-size: 3em;\n  font-family: 'Bangers';\n  box-shadow: -4px 4px dodgerblue;\n}\n.game-start .start {\n  padding: 30px 40px 30px 30px;\n  font-size: 5em;\n  font-family: 'Bangers';\n  border-radius: 4px;\n  background: #ffffff;\n  color: dodgerblue;\n  border: 4px solid dodgerblue;\n  cursor: pointer;\n}\n.flash {\n  height: 100vh;\n  width: 100vw;\n  position: absolute;\n  background: #fff;\n  opacity: 0;\n  transition: opacity 0.05s ease-out;\n  z-index: 5;\n}\n.flash.ing {\n  opacity: 0.5;\n}\n.score {\n  animation: animationFrames linear 0.2s;\n  animation-iteration-count: 1;\n  transform-origin: 50% 50%;\n  position: absolute;\n  z-index: 100;\n  font-size: 4em;\n  font-family: helvetica;\n  font-weight: 900;\n  color: #fff;\n  text-shadow: 2px 2px 3px rgba(0, 0, 0, 0.3);\n  transform: rotate(10deg);\n  -webkit-animation: animationFrames linear 0.2s;\n  -webkit-animation-iteration-count: 1;\n  -webkit-transform-origin: 50% 50%;\n  -moz-animation: animationFrames linear 0.2s;\n  -moz-animation-iteration-count: 1;\n  -moz-transform-origin: 50% 50%;\n  -o-animation: animationFrames linear 0.2s;\n  -o-animation-iteration-count: 1;\n  -o-transform-origin: 50% 50%;\n  -ms-animation: animationFrames linear 0.2s;\n  -ms-animation-iteration-count: 1;\n  -ms-transform-origin: 50% 50%;\n}\n@keyframes animationFrames {\n  0% {\n    opacity: 1;\n    transform: translate(0px, 0px);\n  }\n  51% {\n    transform: translate(-30px, -33px);\n  }\n  100% {\n    opacity: 0;\n    transform: translate(-60px, 225px);\n  }\n}\n@-moz-keyframes animationFrames {\n  0% {\n    opacity: 1;\n    -moz-transform: translate(0px, 0px);\n  }\n  51% {\n    -moz-transform: translate(-30px, -33px);\n  }\n  100% {\n    opacity: 0;\n    -moz-transform: translate(-60px, 225px);\n  }\n}\n@-webkit-keyframes animationFrames {\n  0% {\n    opacity: 1;\n    -webkit-transform: translate(0px, 0px);\n  }\n  51% {\n    -webkit-transform: translate(-30px, -33px);\n  }\n  100% {\n    opacity: 0;\n    -webkit-transform: translate(-60px, 225px);\n  }\n}\n@-o-keyframes animationFrames {\n  0% {\n    opacity: 1;\n    -o-transform: translate(0px, 0px);\n  }\n  51% {\n    -o-transform: translate(-30px, -33px);\n  }\n  100% {\n    opacity: 0;\n    -o-transform: translate(-60px, 225px);\n  }\n}\n@-ms-keyframes animationFrames {\n  0% {\n    opacity: 1;\n    -ms-transform: translate(0px, 0px);\n  }\n  51% {\n    -ms-transform: translate(-30px, -33px);\n  }\n  100% {\n    opacity: 0;\n    -ms-transform: translate(-60px, 225px);\n  }\n}\n.hide {\n  display: none;\n}\n";(require('lessify'))(css); module.exports = css;
-},{"lessify":15}],12:[function(require,module,exports){
+},{"../tpl/votes.html":21,"./trump-collection.js":9,"backbone":13,"jquery":15}],12:[function(require,module,exports){
+var css = "* {\n  font-family: 'Bangers';\n  box-sizing: border-box;\n  -webkit-touch-callout: none;\n  /* iOS Safari */\n  -webkit-user-select: none;\n  /* Chrome/Safari/Opera */\n  -khtml-user-select: none;\n  /* Konqueror */\n  -moz-user-select: none;\n  /* Firefox */\n  -ms-user-select: none;\n  /* Internet Explorer/Edge */\n  user-select: none;\n}\nbody {\n  background: dodgerblue;\n  height: 100vh;\n  width: 100vw;\n  display: flex;\n  justify-content: center;\n  align-items: center;\n}\n.timer {\n  position: absolute;\n  top: 0;\n  right: 30px;\n  font-family: 'Bangers';\n  font-size: 6em;\n  color: #fff;\n}\n.timer.running:after {\n  content: '.9';\n  animation: changeLetter 1s linear infinite alternate;\n}\n.score-container {\n  position: absolute;\n  top: 100px;\n  right: 30px;\n  font-family: 'Bangers';\n  font-size: 3em;\n  color: #fff;\n}\n@keyframes changeLetter {\n  0% {\n    content: '.0';\n  }\n  10% {\n    content: '.9';\n  }\n  20% {\n    content: '.8';\n  }\n  30% {\n    content: '.7';\n  }\n  40% {\n    content: '.6';\n  }\n  50% {\n    content: '.5';\n  }\n  60% {\n    content: '.4';\n  }\n  70% {\n    content: '.3';\n  }\n  80% {\n    content: '.2';\n  }\n  90% {\n    content: '.1';\n  }\n  100% {\n    content: '.0';\n  }\n}\n.building {\n  z-index: 10;\n}\n.podium {\n  margin-top: -4px;\n  width: 520px;\n  position: relative;\n}\n.podium .top {\n  width: 100%;\n  height: 10px;\n  background: #777;\n  border-bottom: 4px solid #565656;\n}\n.podium .bottom {\n  width: 450px;\n  margin: 0 auto;\n  position: relative;\n  border-top: 500px solid #686868;\n  border-left: 25px solid transparent;\n  border-right: 25px solid transparent;\n}\n.podium .seal {\n  width: 300px;\n  height: 300px;\n  background: navy;\n  border: 38px solid #b5b553;\n  z-index: 5;\n  position: absolute;\n  border-radius: 100%;\n  top: 12%;\n  left: 110px;\n  opacity: 0.4;\n}\n.hit {\n  transform-origin: 50% 100%;\n  -webkit-transform-style: preserve-3d;\n  transform-style: preserve-3d;\n  filter: brightness(0.7);\n}\n.hit.left {\n  transform: skewX(2deg) scaleZ(0.9);\n}\n.hit.right {\n  transform: skewX(-2deg) scaleZ(0.9);\n}\n.tip {\n  height: 128px;\n  width: 128px;\n  position: absolute;\n  background: url('http://162.209.109.174/glove.png');\n  transform-style: preserve-3d;\n  z-index: 10;\n}\n.tip.right {\n  transform: rotate3d(100, -140, -40, 140deg);\n}\n.tip.left {\n  transform: rotate3d(40, -10, 103, -60deg);\n}\n.trump {\n  position: relative;\n}\n.trump:hover {\n  cursor: none !important;\n}\n.game-start {\n  height: 100vh;\n  width: 100vw;\n  position: absolute;\n  background: rgba(255, 255, 255, 0.3);\n  z-index: 1000;\n  display: flex;\n  justify-content: center;\n  align-items: center;\n}\n.game-start .can-you {\n  position: absolute;\n  top: 100px;\n  padding: 30px;\n  background: tomato;\n  color: #fff;\n  transform: rotate(-10deg);\n  font-size: 3em;\n  font-family: 'Bangers';\n  box-shadow: -4px 4px dodgerblue;\n}\n.game-start .start {\n  padding: 30px 40px 30px 30px;\n  font-size: 5em;\n  font-family: 'Bangers';\n  border-radius: 4px;\n  background: #ffffff;\n  color: dodgerblue;\n  border: 4px solid dodgerblue;\n  cursor: pointer;\n}\n.flash {\n  height: 100vh;\n  width: 100vw;\n  position: absolute;\n  background: #fff;\n  opacity: 0;\n  transition: opacity 0.05s ease-out;\n  z-index: 5;\n}\n.flash.ing {\n  opacity: 0.5;\n}\n.score {\n  animation: animationFrames linear 0.2s;\n  animation-iteration-count: 1;\n  transform-origin: 50% 50%;\n  position: absolute;\n  z-index: 100;\n  font-size: 4em;\n  font-family: helvetica;\n  font-weight: 900;\n  color: #fff;\n  text-shadow: 2px 2px 3px rgba(0, 0, 0, 0.3);\n  transform: rotate(10deg);\n  -webkit-animation: animationFrames linear 0.2s;\n  -webkit-animation-iteration-count: 1;\n  -webkit-transform-origin: 50% 50%;\n  -moz-animation: animationFrames linear 0.2s;\n  -moz-animation-iteration-count: 1;\n  -moz-transform-origin: 50% 50%;\n  -o-animation: animationFrames linear 0.2s;\n  -o-animation-iteration-count: 1;\n  -o-transform-origin: 50% 50%;\n  -ms-animation: animationFrames linear 0.2s;\n  -ms-animation-iteration-count: 1;\n  -ms-transform-origin: 50% 50%;\n}\n@keyframes animationFrames {\n  0% {\n    opacity: 1;\n    transform: translate(0px, 0px);\n  }\n  51% {\n    transform: translate(-30px, -33px);\n  }\n  100% {\n    opacity: 0;\n    transform: translate(-60px, 225px);\n  }\n}\n@-moz-keyframes animationFrames {\n  0% {\n    opacity: 1;\n    -moz-transform: translate(0px, 0px);\n  }\n  51% {\n    -moz-transform: translate(-30px, -33px);\n  }\n  100% {\n    opacity: 0;\n    -moz-transform: translate(-60px, 225px);\n  }\n}\n@-webkit-keyframes animationFrames {\n  0% {\n    opacity: 1;\n    -webkit-transform: translate(0px, 0px);\n  }\n  51% {\n    -webkit-transform: translate(-30px, -33px);\n  }\n  100% {\n    opacity: 0;\n    -webkit-transform: translate(-60px, 225px);\n  }\n}\n@-o-keyframes animationFrames {\n  0% {\n    opacity: 1;\n    -o-transform: translate(0px, 0px);\n  }\n  51% {\n    -o-transform: translate(-30px, -33px);\n  }\n  100% {\n    opacity: 0;\n    -o-transform: translate(-60px, 225px);\n  }\n}\n@-ms-keyframes animationFrames {\n  0% {\n    opacity: 1;\n    -ms-transform: translate(0px, 0px);\n  }\n  51% {\n    -ms-transform: translate(-30px, -33px);\n  }\n  100% {\n    opacity: 0;\n    -ms-transform: translate(-60px, 225px);\n  }\n}\n.hide {\n  display: none;\n}\n.shout-container {\n  position: absolute;\n  z-index: 111;\n}\n.shout-container.left-top {\n  top: 100px;\n  left: 150px;\n  transform: rotate(15deg);\n}\n.shout-container.left-bottom {\n  bottom: 150px;\n  left: 150px;\n  transform: rotate(-25deg);\n}\n.shout-container h1 {\n  display: inline-block;\n  background: #fff;\n  border-radius: 100px / 50px;\n  padding: 30px;\n  font-family: 'Bangers';\n  font-size: 2em;\n  z-index: 10;\n  position: relative;\n}\n.shout-container .triangle {\n  display: inline-block;\n  width: 0;\n  height: 0;\n  border-style: solid;\n  border-width: 0 100px 80px 0;\n  border-color: transparent #fff transparent transparent;\n  position: absolute;\n  right: 0;\n  top: 54px;\n  z-index: 5;\n  transform: rotate(-25deg);\n}\n.shout-container:empty {\n  display: none;\n}\n";(require('lessify'))(css); module.exports = css;
+},{"lessify":16}],13:[function(require,module,exports){
 (function (global){
 //     Backbone.js 1.3.3
 
@@ -2291,7 +2364,46 @@ var css = "* {\n  font-family: 'Bangers';\n  box-sizing: border-box;\n  -webkit-
 });
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"jquery":13,"underscore":16}],13:[function(require,module,exports){
+},{"jquery":15,"underscore":17}],14:[function(require,module,exports){
+module.exports = function (css, customDocument) {
+  var doc = customDocument || document;
+  if (doc.createStyleSheet) {
+    var sheet = doc.createStyleSheet()
+    sheet.cssText = css;
+    return sheet.ownerNode;
+  } else {
+    var head = doc.getElementsByTagName('head')[0],
+        style = doc.createElement('style');
+
+    style.type = 'text/css';
+
+    if (style.styleSheet) {
+      style.styleSheet.cssText = css;
+    } else {
+      style.appendChild(doc.createTextNode(css));
+    }
+
+    head.appendChild(style);
+    return style;
+  }
+};
+
+module.exports.byUrl = function(url) {
+  if (document.createStyleSheet) {
+    return document.createStyleSheet(url).ownerNode;
+  } else {
+    var head = document.getElementsByTagName('head')[0],
+        link = document.createElement('link');
+
+    link.rel = 'stylesheet';
+    link.href = url;
+
+    head.appendChild(link);
+    return link;
+  }
+};
+
+},{}],15:[function(require,module,exports){
 /*!
  * jQuery JavaScript Library v3.1.1
  * https://jquery.com/
@@ -12513,49 +12625,10 @@ if ( !noGlobal ) {
 return jQuery;
 } );
 
-},{}],14:[function(require,module,exports){
-module.exports = function (css, customDocument) {
-  var doc = customDocument || document;
-  if (doc.createStyleSheet) {
-    var sheet = doc.createStyleSheet()
-    sheet.cssText = css;
-    return sheet.ownerNode;
-  } else {
-    var head = doc.getElementsByTagName('head')[0],
-        style = doc.createElement('style');
-
-    style.type = 'text/css';
-
-    if (style.styleSheet) {
-      style.styleSheet.cssText = css;
-    } else {
-      style.appendChild(doc.createTextNode(css));
-    }
-
-    head.appendChild(style);
-    return style;
-  }
-};
-
-module.exports.byUrl = function(url) {
-  if (document.createStyleSheet) {
-    return document.createStyleSheet(url).ownerNode;
-  } else {
-    var head = document.getElementsByTagName('head')[0],
-        link = document.createElement('link');
-
-    link.rel = 'stylesheet';
-    link.href = url;
-
-    head.appendChild(link);
-    return link;
-  }
-};
-
-},{}],15:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 module.exports = require('cssify');
 
-},{"cssify":14}],16:[function(require,module,exports){
+},{"cssify":14}],17:[function(require,module,exports){
 //     Underscore.js 1.8.3
 //     http://underscorejs.org
 //     (c) 2009-2015 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
@@ -14105,7 +14178,7 @@ module.exports = require('cssify');
   }
 }.call(this));
 
-},{}],17:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 module.exports = function(obj){
 var __t,__p='',__j=Array.prototype.join,print=function(){__p+=__j.call(arguments,'');};
 with(obj||{}){
@@ -14116,7 +14189,18 @@ __p+='<h1 class="can-you">'+
 return __p;
 };
 
-},{}],18:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
+module.exports = function(obj){
+var __t,__p='',__j=Array.prototype.join,print=function(){__p+=__j.call(arguments,'');};
+with(obj||{}){
+__p+='<h1>'+
+((__t=( message ))==null?'':__t)+
+'</h1>\n<span class="triangle"></span>\n';
+}
+return __p;
+};
+
+},{}],20:[function(require,module,exports){
 module.exports = function(obj){
 var __t,__p='',__j=Array.prototype.join,print=function(){__p+=__j.call(arguments,'');};
 with(obj||{}){
@@ -14131,7 +14215,7 @@ __p+='<img class="trump" src="'+
 return __p;
 };
 
-},{}],19:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 module.exports = function(obj){
 var __t,__p='',__j=Array.prototype.join,print=function(){__p+=__j.call(arguments,'');};
 with(obj||{}){
