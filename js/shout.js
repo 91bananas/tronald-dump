@@ -23,7 +23,7 @@ module.exports = Backbone.View.extend({
         if (getRandomInt(1,15) === 1) {
             this.$el.empty().append(
                 this.template({
-                    message: _.sample(allTrumps.phrases[trump.get('phrase')])
+                    message: _.sample(allTrumps.phrases)
                 })
             );
             this.$el.removeClass('left-bottom left-top').addClass(
